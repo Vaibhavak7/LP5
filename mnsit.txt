@@ -1,0 +1,95 @@
+
+import pandas as pd`
+train_df = pd.read_csv("fashion-mnist_train.csv")
+test_df = pd.read_csv("fashion-mnist_test.csv")
+train_df`
+test_df`
+train_df.label.unique()`
+class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat','Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']`
+import numpy as np
+x_train = train_df.loc[:,train_df.columns != 'label'].to_numpy()
+x_train = x_train.reshape([-1,28,28,1])
+# Reshaping X train as a Numpy array of 28*28 pixels, with 1 channel for Grayscale images
+x_train = x_train/255
+# Normalize the Pixels so they lie within (0,1)`
+
+x_test = test_df.iloc[:, test_df.columns !='label'].to_numpy()
+x_test = x_test.reshape([-1,28,28,1])
+x_test = x_test/255.0`
+
+y_train = train_df['label'].to_numpy()
+y_test = test_df['label'].to_numpy()`
+
+import matplotlib.pyplot as plt
+plt.figure(figsize=(10,10))
+for i in range(25):
+  plt.subplot(5,5,i+1)
+  plt.xticks([])
+  plt.yticks([])
+  plt.imshow(x_train[i],cmap=plt.cm.binary)
+  plt.xlabel(class_names[y_train[i]])`
+     
+
+from keras.models import Sequential
+from keras.layers import Dense,Conv2D,Flatten,MaxPooling2D,Dropout
+
+model = Sequential()
+
+model.add(Conv2D(filters=64,kernel_size=(3,3),input_shape=(28,28,1),activation='relu'))
+# 2D Covolutional Layer
+# Each filter is a small matrix that is convolved with the input image to produce a feature map
+# features = 64 means the layer will learn 64 different features and kernel_size or filter size is 3*3
+
+model.add(MaxPooling2D(pool_size=(2,2)))
+# Max pooling is a downsampling operation to reduce the dimensionality of feature maps and extract the most important features.
+# In this case, a pooling window of 2x2 pixels is used.
+# During the pooling operation, the maximum value within each 2x2 window of the input feature map is retained,
+# while the other values are discarded
+
+model.add(Dropout(rate=0.3))
+# Dropout is a regularization technique used to prevent overfitting in neural networks
+# by randomly dropping (setting to zero) a fraction of the input units (or neurons) during training.
+# In this case, a dropout rate of 0.3 (or 30%) is used,
+# meaning that 30% of the input units will be randomly set to zero during each training iteration.
+
+model.add(Flatten())
+# The Flatten layer is used to convert the multi-dimensional output of the preceding layer into a one-dimensional vector.
+# Flattening is necessary when transitioning from convolutional or pooling layers (which produce 2D or 3D output)
+# to fully connected layers (which require 1D input)
+
+model.add(Dense(units=32,activation='relu'))
+model.add(Dense(units=10,activation='sigmoid'))
+# Sigmoid f(x) = 1/(1+e^x)
+model.compile(loss='sparse_categorical_crossentropy',optimizer='adam',metrics=['accuracy'])
+
+model.summary()`
+
+model.fit(x_train,y_train,epochs=50,batch_size=1200,validation_split=0.05)`
+
+evaluation = model.evaluate(x_test,y_test)`
+
+print(f"Accuracy : {evaluation[1]}")`
+
+y_probabilities = model.predict(x_test)
+y_pred = y_probabilities.argmax(axis=-1)
+# Take the maximum probability out of all class predicted probabilities`
+
+y_pred`
+     
+
+plt.figure(figsize=(10,10),)
+for i in range(25):
+    plt.subplot(5,5,i+1)
+    plt.xticks([])
+    plt.yticks([])
+    plt.imshow(x_test[i], cmap=plt.cm.binary)
+#     plt.xlabel(f"True Class:{y_test[i]}")
+    plt.title(f"Pred:{class_names[y_pred[i]]}")
+plt.show()`
+
+from sklearn.metrics import classification_report
+
+num_classes = 10
+class_names = ["class {}".format(i) for i in range(num_classes)]
+cr = classification_report(y_test, y_pred, target_names=class_names)
+print(cr) #Or simply just do cr=classification_report(y_test,y_pred) and print it.
